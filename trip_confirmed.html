@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block title %}Trip Confirmed! — Wanderlust{% endblock %}
+{% block content %}
+<div class="container confirmed-page">
+  <div class="confirmed-card">
+    <div class="confirmed-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <h1>Trip Planned Successfully! 🎉</h1>
+    <p class="confirmed-subtitle">Your adventure awaits. Here's your trip summary:</p>
+    <div class="confirmed-details">
+      <div class="confirmed-detail-row"><span>Trip Name</span><strong>{{ trip.title }}</strong></div>
+      {% if trip.start_date %}<div class="confirmed-detail-row"><span>Start Date</span><strong>{{ trip.start_date.strftime('%d %b %Y') }}</strong></div>{% endif %}
+      {% if trip.end_date %}<div class="confirmed-detail-row"><span>End Date</span><strong>{{ trip.end_date.strftime('%d %b %Y') }}</strong></div>{% endif %}
+      <div class="confirmed-detail-row"><span>Destinations</span><strong>{{ trip.items|length }}</strong></div>
+      <div class="confirmed-detail-row"><span>Total Duration</span><strong>{{ trip.items|sum(attribute='duration_days') }} days</strong></div>
+      <div class="confirmed-detail-row highlight"><span>Total Estimated Cost</span><strong>₹{{ "{:,.0f}".format(trip.total_cost) }}</strong></div>
+    </div>
+    {% if trip.notes %}<div class="confirmed-notes"><i class="fa-regular fa-note-sticky"></i> {{ trip.notes }}</div>{% endif %}
+    <div class="confirmed-destinations">
+      <h3>Your Itinerary</h3>
+      {% for item in trip.items %}
+      <div class="confirmed-dest">
+        <img src="{{ item.destination.image_url }}" alt="{{ item.destination.name }}">
+        <div>
+          <h4>{{ item.destination.name }}</h4>
+          <p>{{ item.duration_days }} days · {{ item.destination.location }}</p>
+        </div>
+        <span>₹{{ "{:,.0f}".format(item.destination.estimated_cost * item.duration_days / item.destination.duration_days) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="confirmed-actions">
+      <a href="{{ url_for('trips') }}" class="btn-primary"><i class="fa-solid fa-suitcase"></i> View My Trips</a>
+      <a href="{{ url_for('destinations') }}" class="btn-outline">Plan Another Trip</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

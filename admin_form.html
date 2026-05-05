@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit' if dest else 'Add New' }} Destination — Admin{% endblock %}
+{% block content %}
+<div class="page-header-simple admin-header">
+  <div class="container">
+    <h1><i class="fa-solid fa-{{ 'pen-to-square' if dest else 'plus' }}"></i>
+      {{ 'Edit: ' + dest.name if dest else 'Add New Destination' }}
+    </h1>
+    <p>{{ 'Changes save immediately and are visible to all users.' if dest else 'New destination appears on site immediately after saving.' }}</p>
+  </div>
+</div>
+
+<div class="container admin-form-page">
+  <div class="admin-form-notice">
+    <i class="fa-solid fa-circle-info"></i>
+    <span><strong>Live Updates:</strong> Any changes you save here are immediately visible to all users browsing the site. Featured destinations appear on the homepage. Trending destinations get the 🔥 badge.</span>
+  </div>
+
+  <form action="{{ url_for('admin_edit_destination', dest_id=dest.id) if dest else url_for('admin_add_destination') }}" method="POST" class="admin-big-form">
+
+    <!-- SECTION 1: BASIC INFO -->
+    <div class="admin-form-section">
+      <div class="admin-form-section-title"><i class="fa-solid fa-circle-1"></i> Basic Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Destination Name <span class="req">*</span></label>
+          <input type="text" name="name" required class="form-input" value="{{ dest.name if dest else '' }}" placeholder="e.g. Goa Beach Escape">
+        </div>
+        <div class="form-group">
+          <label>Category <span class="req">*</span></label>
+          <select name="category" class="form-input">
+            {% for cat in ['Beach','Mountain','Historical','City'] %}
+            <option value="{{ cat }}" {% if dest and dest.category == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Full Description <span class="req">*</span></label>
+        <textarea name="description" rows="4" required class="form-input" placeholder="A rich, engaging description of the destination...">{{ dest.description if dest else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Image URL <span class="req">*</span></label>
+        <input type="text" name="image_url" class="form-input" value="{{ dest.image_url if dest else '' }}" placeholder="https://images.unsplash.com/...">
+        <small>Use high-quality landscape images (800px+ wide). Unsplash URLs work great.</small>
+      </div>
+    </div>
+
+    <!-- SECTION 2: COST, RATING, LOCATION -->
+    <div class="admin-form-section">
+      <div class="admin-form-section-title"><i class="fa-solid fa-circle-2"></i> Cost, Rating & Location</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Estimated Cost (₹) <span class="req">*</span></label>
+          <input type="number" name="estimated_cost" required class="form-input" value="{{ dest.estimated_cost|int if dest else '' }}" placeholder="15000">
+        </div>
+        <div class="form-group">
+          <label>Rating (0–5)</label>
+          <input type="number" name="rating" step="0.1" min="0" max="5" class="form-input" value="{{ dest.rating if dest else '4.0' }}">
+        </div>
+        <div class="form-group">
+          <label>Duration (days)</label>
+          <input type="number" name="duration_days" min="1" max="30" class="form-input" value="{{ dest.duration_days if dest else '3' }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" class="form-input" value="{{ dest.location if dest else '' }}" placeholder="City, State">
+        </div>
+        <div class="form-group">
+          <label>Best Time to Visit</label>
+          <input type="text" name="best_time" class="form-input" value="{{ dest.best_time if dest else '' }}" placeholder="e.g. Oct – Mar">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Latitude <small>(for map pin)</small></label>
+          <input type="number" name="latitude" step="0.0001" class="form-input" value="{{ dest.latitude if dest else '' }}" placeholder="e.g. 15.2993">
+        </div>
+        <div class="form-group">
+          <label>Longitude <small>(for map pin)</small></label>
+          <input type="number" name="longitude" step="0.0001" class="form-input" value="{{ dest.longitude if dest else '' }}" placeholder="e.g. 74.1240">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: VISIBILITY -->
+    <div class="admin-form-section">
+      <div class="admin-form-section-title"><i class="fa-solid fa-circle-3"></i> Visibility & Status</div>
+      <div class="visibility-info">
+        <i class="fa-solid fa-eye"></i>
+        <p>These settings control where this destination appears on the site for users.</p>
+      </div>
+      <div class="checkbox-cards">
+        <label class="checkbox-card {% if dest and dest.is_featured %}checked{% endif %}">
+          <input type="checkbox" name="is_featured" {% if dest and dest.is_featured %}checked{% endif %}>
+          <div class="checkbox-card-content">
+            <i class="fa-solid fa-star"></i>
+            <strong>Featured Destination</strong>
+            <p>Appears in the "Featured Destinations" grid on the homepage. High visibility.</p>
+          </div>
+          <div class="checkbox-card-indicator"><i class="fa-solid fa-check"></i></div>
+        </label>
+        <label class="checkbox-card {% if dest and dest.is_trending %}checked{% endif %}">
+          <input type="checkbox" name="is_trending" {% if dest and dest.is_trending %}checked{% endif %}>
+          <div class="checkbox-card-content">
+            <i class="fa-solid fa-fire"></i>
+            <strong>Trending</strong>
+            <p>Shows 🔥 Trending badge on cards and appears in "Trending Destinations" section.</p>
+          </div>
+          <div class="checkbox-card-indicator"><i class="fa-solid fa-check"></i></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- SECTION 4: EXTRA DETAILS -->
+    <div class="admin-form-section">
+      <div class="admin-form-section-title"><i class="fa-solid fa-circle-4"></i> Extra Details <span style="font-weight:400;font-size:.85rem;color:var(--text-3)">(shown on destination detail page)</span></div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-trophy" style="color:var(--accent)"></i> Key Highlights</label>
+        <textarea name="highlights" rows="3" class="form-input" placeholder="Separate each highlight with a pipe | character&#10;e.g. Baga Beach|Portuguese Churches|Dudhsagar Waterfall|Night Markets">{{ dest.highlights if dest else '' }}</textarea>
+        <small>Each item separated by <strong>|</strong> pipe. These show as checkmark bullets on the detail page.</small>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-map-location-dot" style="color:var(--primary)"></i> Things To Do</label>
+        <textarea name="things_to_do" rows="3" class="form-input" placeholder="e.g. Parasailing at Baga Beach|Sunset cruise on Mandovi River|Visit Old Goa churches">{{ dest.things_to_do if dest else '' }}</textarea>
+        <small>Each activity separated by <strong>|</strong> pipe. Shows as a numbered activity list.</small>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-lightbulb" style="color:#eab308"></i> Travel Tips</label>
+        <textarea name="travel_tips" rows="3" class="form-input" placeholder="e.g. Book 2 months ahead for Dec–Jan|North Goa for parties, South for peace|Rent a scooter for ₹300/day">{{ dest.travel_tips if dest else '' }}</textarea>
+        <small>Each tip separated by <strong>|</strong> pipe. Shows in the Insider Tips section.</small>
+      </div>
+
+      <div class="form-group">
+        <label><i class="fa-solid fa-cloud-sun" style="color:#0ea5e9"></i> Weather Info</label>
+        <input type="text" name="weather_info" class="form-input" value="{{ dest.weather_info if dest else '' }}" placeholder="e.g. Tropical. Winter (Nov–Feb): 20–32°C sunny. Monsoon Jun–Sep.">
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Language(s)</label>
+          <input type="text" name="language" class="form-input" value="{{ dest.language if dest else '' }}" placeholder="Hindi, English">
+        </div>
+        <div class="form-group">
+          <label>Currency</label>
+          <input type="text" name="currency" class="form-input" value="{{ dest.currency if dest else 'Indian Rupee (₹)' }}" placeholder="Indian Rupee (₹)">
+        </div>
+        <div class="form-group">
+          <label>Trip Difficulty</label>
+          <select name="difficulty" class="form-input">
+            {% for d in ['Easy','Moderate','Challenging'] %}
+            <option value="{{ d }}" {% if dest and dest.difficulty == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tags <small>(comma separated)</small></label>
+        <input type="text" name="tags" class="form-input" value="{{ dest.tags if dest else '' }}" placeholder="beach, party, seafood, heritage">
+        <small>Used for search. Keep lowercase, comma-separated.</small>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="admin-form-actions">
+      <button type="submit" class="btn-primary btn-lg">
+        <i class="fa-solid fa-{{ 'floppy-disk' if dest else 'plus' }}"></i>
+        {{ 'Save Changes — Live Immediately' if dest else 'Add Destination — Visible Immediately' }}
+      </button>
+      <a href="{{ url_for('admin') }}" class="btn-outline btn-lg">Cancel</a>
+      {% if dest %}
+      <a href="{{ url_for('destination_detail', dest_id=dest.id) }}" class="btn-outline btn-lg" target="_blank">
+        <i class="fa-solid fa-eye"></i> Preview as User
+      </a>
+      {% endif %}
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Toggle checkbox card visual state
+document.querySelectorAll('.checkbox-card input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', function(){
+    this.closest('.checkbox-card').classList.toggle('checked', this.checked);
+  });
+});
+</script>
+{% endblock %}

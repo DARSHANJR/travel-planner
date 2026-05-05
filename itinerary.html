@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block title %}My Itinerary — Wanderlust{% endblock %}
+{% block content %}
+<div class="page-header-simple">
+  <div class="container">
+    <h1><i class="fa-solid fa-map-pin"></i> My Itinerary</h1>
+    <p>Build your perfect travel plan</p>
+  </div>
+</div>
+<div class="container itinerary-page">
+  {% if items %}
+  <div class="itinerary-grid">
+    <div class="itinerary-items">
+      <h2>Selected Destinations ({{ items|length }})</h2>
+      {% for item in items %}
+      <div class="itinerary-item">
+        <img src="{{ item.destination.image_url }}" alt="{{ item.destination.name }}">
+        <div class="itinerary-item-info">
+          <div class="itinerary-item-badge">{{ item.destination.category }}</div>
+          <h3>{{ item.destination.name }}</h3>
+          <p><i class="fa-solid fa-location-dot"></i> {{ item.destination.location }}</p>
+          <div class="itinerary-item-cost">₹{{ "{:,.0f}".format(item.destination.estimated_cost * item.duration_days / item.destination.duration_days) }}</div>
+        </div>
+        <div class="itinerary-item-controls">
+          <form action="{{ url_for('update_duration', item_id=item.id) }}" method="POST" class="duration-form">
+            <label>Days</label>
+            <div class="duration-control">
+              <button type="button" class="dur-btn minus">−</button>
+              <input type="number" name="days" value="{{ item.duration_days }}" min="1" max="30" class="dur-input">
+              <button type="button" class="dur-btn plus">+</button>
+            </div>
+            <button type="submit" class="btn-update">Update</button>
+          </form>
+          <form action="{{ url_for('remove_from_itinerary', item_id=item.id) }}" method="POST">
+            <button type="submit" class="btn-remove"><i class="fa-solid fa-trash"></i> Remove</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="itinerary-summary">
+      <div class="summary-card">
+        <h2>Trip Summary</h2>
+        <div class="summary-rows">
+          {% for item in items %}
+          <div class="summary-row">
+            <span>{{ item.destination.name }} ({{ item.duration_days }}d)</span>
+            <span>₹{{ "{:,.0f}".format(item.destination.estimated_cost * item.duration_days / item.destination.duration_days) }}</span>
+          </div>
+          {% endfor %}
+          <div class="summary-divider"></div>
+          <div class="summary-total">
+            <span>Total Estimated Cost</span>
+            <span>₹{{ "{:,.0f}".format(total) }}</span>
+          </div>
+          <div class="summary-total-days">
+            <span>Total Duration</span>
+            <span>{{ items|sum(attribute='duration_days') }} days</span>
+          </div>
+        </div>
+        <a href="{{ url_for('planner') }}" class="btn-primary btn-full" style="margin-top:20px">
+          <i class="fa-solid fa-calendar-check"></i> Plan This Trip
+        </a>
+        <a href="{{ url_for('destinations') }}" class="btn-outline btn-full" style="margin-top:8px">
+          <i class="fa-solid fa-plus"></i> Add More Destinations
+        </a>
+      </div>
+
+      <!-- MAP -->
+      <div class="summary-card" style="padding:16px">
+        <h3 style="margin-bottom:12px"><i class="fa-solid fa-route"></i> Route Preview</h3>
+        <div id="itinMap" style="height:300px;border-radius:12px;"></div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state large">
+    <i class="fa-solid fa-map-pin"></i>
+    <h2>Your itinerary is empty</h2>
+    <p>Start adding destinations to build your dream trip!</p>
+    <a href="{{ url_for('destinations') }}" class="btn-primary">Explore Destinations</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if items %}
+<script>
+const map = L.map('itinMap').setView([22.5, 82.0], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const coords = [{% for item in items %}{% if item.destination.latitude %}[{{ item.destination.latitude }},{{ item.destination.longitude }}],{% endif %}{% endfor %}];
+const names = [{% for item in items %}{% if item.destination.latitude %}"{{ item.destination.name }}",{% endif %}{% endfor %}];
+if(coords.length){
+  coords.forEach((c,i)=>{
+    L.marker(c).addTo(map).bindPopup(names[i]);
+  });
+  if(coords.length>1) L.polyline(coords,{color:'#2563eb',weight:2,dashArray:'6,6'}).addTo(map);
+  map.fitBounds(coords.length>1? coords : [[coords[0][0]-1,coords[0][1]-1],[coords[0][0]+1,coords[0][1]+1]]);
+}
+
+// Duration controls
+document.querySelectorAll('.duration-form').forEach(form=>{
+  const input = form.querySelector('.dur-input');
+  form.querySelector('.minus').addEventListener('click',()=>{ input.value=Math.max(1,parseInt(input.value)-1); });
+  form.querySelector('.plus').addEventListener('click',()=>{ input.value=Math.min(30,parseInt(input.value)+1); });
+});
+</script>
+{% endif %}
+{% endblock %}

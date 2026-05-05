@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block title %}Admin Panel — Wanderlust{% endblock %}
+{% block content %}
+<div class="page-header-simple admin-header">
+  <div class="container">
+    <h1><i class="fa-solid fa-shield"></i> Admin Dashboard</h1>
+    <p>Manage destinations, users and trips</p>
+  </div>
+</div>
+<div class="container admin-page">
+  <!-- STATS -->
+  <div class="admin-stats-grid">
+    <div class="admin-stat-card"><i class="fa-solid fa-map-pin"></i><div><span class="admin-stat-num">{{ stats.destinations }}</span><span>Destinations</span></div></div>
+    <div class="admin-stat-card"><i class="fa-solid fa-users"></i><div><span class="admin-stat-num">{{ stats.users }}</span><span>Users</span></div></div>
+    <div class="admin-stat-card"><i class="fa-solid fa-suitcase"></i><div><span class="admin-stat-num">{{ stats.trips }}</span><span>Trips</span></div></div>
+    <div class="admin-stat-card"><i class="fa-solid fa-star"></i><div><span class="admin-stat-num">{{ stats.reviews }}</span><span>Reviews</span></div></div>
+  </div>
+
+  <!-- DESTINATIONS TABLE -->
+  <div class="detail-card">
+    <div class="admin-table-header">
+      <h2>Destinations</h2>
+      <a href="{{ url_for('admin_add_destination') }}" class="btn-primary"><i class="fa-solid fa-plus"></i> Add Destination</a>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Cost</th><th>Rating</th><th>Featured</th><th>Trending</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for d in destinations %}
+        <tr>
+          <td><img src="{{ d.image_url }}" style="width:60px;height:40px;object-fit:cover;border-radius:6px;"></td>
+          <td><strong>{{ d.name }}</strong><br><small>{{ d.location }}</small></td>
+          <td><span class="admin-badge">{{ d.category }}</span></td>
+          <td>₹{{ "{:,.0f}".format(d.estimated_cost) }}</td>
+          <td>⭐ {{ d.rating }}</td>
+          <td>{% if d.is_featured %}<i class="fa-solid fa-check" style="color:#22c55e"></i>{% else %}—{% endif %}</td>
+          <td>{% if d.is_trending %}<i class="fa-solid fa-fire" style="color:#f59e0b"></i>{% else %}—{% endif %}</td>
+          <td class="admin-actions">
+            <a href="{{ url_for('admin_edit_destination', dest_id=d.id) }}" class="btn-outline-sm"><i class="fa-solid fa-pen"></i></a>
+            <form action="{{ url_for('admin_delete_destination', dest_id=d.id) }}" method="POST" style="display:inline" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn-danger-sm"><i class="fa-solid fa-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RECENT TRIPS -->
+  <div class="detail-card">
+    <h2>Recent Trips</h2>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Trip</th><th>User</th><th>Destinations</th><th>Total Cost</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+        {% for t in trips %}
+        <tr>
+          <td><strong>{{ t.title }}</strong></td>
+          <td>{{ t.user.name }}</td>
+          <td>{{ t.items|length }}</td>
+          <td>₹{{ "{:,.0f}".format(t.total_cost) }}</td>
+          <td><span class="status-pill status-{{ t.status.lower() }}">{{ t.status }}</span></td>
+          <td>{{ t.created_at.strftime('%d %b %Y') }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="detail-card">
+    <h2>Users</h2>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Trips</th><th>Admin</th><th>Joined</th></tr></thead>
+        <tbody>
+        {% for u in users %}
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="mini-avatar">{{ u.name[0].upper() }}</div>{{ u.name }}</div></td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.trips|length }}</td>
+          <td>{% if u.is_admin %}<i class="fa-solid fa-shield" style="color:#2563eb"></i>{% else %}—{% endif %}</td>
+          <td>{{ u.created_at.strftime('%d %b %Y') }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

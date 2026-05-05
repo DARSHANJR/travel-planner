@@ -1,0 +1,277 @@
+{% extends "layout.html" %}
+{% block title %}{{ dest.name }} — Wanderlust{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<div class="dest-detail-hero">
+  <img src="{{ dest.image_url }}" alt="{{ dest.name }}">
+  <div class="dest-detail-overlay"></div>
+  <div class="dest-detail-hero-content container">
+    <div class="dest-breadcrumb"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('destinations') }}">Explore</a> / {{ dest.name }}</div>
+    <div class="dest-detail-badges">
+      <span class="dest-detail-badge cat">{{ dest.category }}</span>
+      {% if dest.difficulty %}
+      <span class="dest-detail-badge diff-{{ dest.difficulty.lower() }}">
+        <i class="fa-solid {% if dest.difficulty == 'Easy' %}fa-circle-check{% elif dest.difficulty == 'Moderate' %}fa-triangle-exclamation{% else %}fa-mountain{% endif %}"></i>
+        {{ dest.difficulty }}
+      </span>
+      {% endif %}
+      {% if dest.is_trending %}<span class="dest-detail-badge trending"><i class="fa-solid fa-fire"></i> Trending</span>{% endif %}
+    </div>
+    <h1>{{ dest.name }}</h1>
+    <div class="dest-detail-meta">
+      <span><i class="fa-solid fa-star" style="color:#fbbf24"></i> {{ dest.rating }}/5 Rating</span>
+      <span><i class="fa-solid fa-location-dot"></i> {{ dest.location }}</span>
+      {% if dest.best_time %}<span><i class="fa-regular fa-calendar"></i> Best: {{ dest.best_time }}</span>{% endif %}
+      <span><i class="fa-regular fa-clock"></i> {{ dest.duration_days }} days recommended</span>
+    </div>
+  </div>
+</div>
+
+<div class="container dest-detail-body">
+  <div class="dest-detail-grid">
+
+    <!-- ── MAIN CONTENT ── -->
+    <div class="dest-detail-main">
+
+      <!-- ABOUT -->
+      <div class="detail-card">
+        <h2><i class="fa-solid fa-circle-info"></i> About this Destination</h2>
+        <p class="dest-full-desc">{{ dest.description }}</p>
+        <div class="dest-quick-facts">
+          {% if dest.language %}<div class="quick-fact"><i class="fa-solid fa-language"></i><div><span>Language</span><strong>{{ dest.language }}</strong></div></div>{% endif %}
+          {% if dest.currency %}<div class="quick-fact"><i class="fa-solid fa-indian-rupee-sign"></i><div><span>Currency</span><strong>{{ dest.currency }}</strong></div></div>{% endif %}
+          {% if dest.weather_info %}<div class="quick-fact wide"><i class="fa-solid fa-cloud-sun"></i><div><span>Weather</span><strong>{{ dest.weather_info }}</strong></div></div>{% endif %}
+        </div>
+        {% if dest.tags %}
+        <div class="tags-wrap" style="margin-top:16px">
+          {% for tag in dest.tags.split(',') %}
+          <a href="{{ url_for('destinations', q=tag.strip()) }}" class="tag">{{ tag.strip() }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- HIGHLIGHTS -->
+      {% if highlights %}
+      <div class="detail-card">
+        <h2><i class="fa-solid fa-trophy"></i> Key Highlights</h2>
+        <div class="highlights-grid">
+          {% for h in highlights %}
+          <div class="highlight-item">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>{{ h }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- THINGS TO DO -->
+      {% if things_to_do %}
+      <div class="detail-card">
+        <h2><i class="fa-solid fa-map-location-dot"></i> Things To Do</h2>
+        <div class="activities-list">
+          {% for activity in things_to_do %}
+          <div class="activity-item">
+            <div class="activity-num">{{ loop.index }}</div>
+            <span>{{ activity }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- TRAVEL TIPS -->
+      {% if travel_tips %}
+      <div class="detail-card tips-card">
+        <h2><i class="fa-solid fa-lightbulb"></i> Travel Tips & Insider Advice</h2>
+        <div class="tips-list">
+          {% for tip in travel_tips %}
+          <div class="tip-item">
+            <i class="fa-solid fa-circle-dot"></i>
+            <span>{{ tip }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- MAP -->
+      {% if dest.latitude and dest.longitude %}
+      <div class="detail-card">
+        <h2><i class="fa-solid fa-map-location-dot"></i> Location on Map</h2>
+        <div id="detailMap" style="height:300px;border-radius:12px;"></div>
+      </div>
+      {% endif %}
+
+      <!-- REVIEWS -->
+      <div class="detail-card" id="reviews">
+        <h2><i class="fa-solid fa-comments"></i> Traveller Reviews
+          <span style="font-size:.9rem;font-weight:400;color:var(--text-3)">({{ reviews|length }})</span>
+        </h2>
+        {% if current_user.is_authenticated %}
+        <div class="review-form-wrap">
+          <h3>Share Your Experience</h3>
+          <form action="{{ url_for('add_review', dest_id=dest.id) }}" method="POST">
+            <div class="star-rating-input">
+              {% for i in [5,4,3,2,1] %}
+              <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" {% if i==5 %}checked{% endif %}>
+              <label for="star{{ i }}"><i class="fa-solid fa-star"></i></label>
+              {% endfor %}
+            </div>
+            <textarea name="comment" placeholder="Tell other travellers about your experience here..." rows="3"></textarea>
+            <button type="submit" class="btn-primary">Submit Review</button>
+          </form>
+        </div>
+        {% endif %}
+        {% if reviews %}
+        <div class="reviews-list">
+          {% for r in reviews %}
+          <div class="review-item">
+            <div class="review-header">
+              <div class="reviewer-avatar">{{ r.user.name[0].upper() }}</div>
+              <div>
+                <strong>{{ r.user.name }}</strong>
+                <div class="review-stars">
+                  {% for i in range(r.rating) %}<i class="fa-solid fa-star"></i>{% endfor %}
+                  {% for i in range(5-r.rating) %}<i class="fa-regular fa-star"></i>{% endfor %}
+                </div>
+              </div>
+              <span class="review-date">{{ r.created_at.strftime('%b %Y') }}</span>
+            </div>
+            {% if r.comment %}<p class="review-comment">{{ r.comment }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-reviews">
+          <i class="fa-regular fa-comment"></i>
+          <p>No reviews yet. {% if current_user.is_authenticated %}Be the first to share your experience!{% else %}<a href="{{ url_for('login') }}">Login</a> to write a review.{% endif %}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <div class="dest-detail-sidebar">
+
+      <!-- BOOKING CARD -->
+      <div class="booking-card">
+        <div class="booking-price">
+          <span class="booking-price-label">Estimated Cost</span>
+          <span class="booking-price-amount">₹{{ "{:,.0f}".format(dest.estimated_cost) }}</span>
+          <span class="booking-price-note">for {{ dest.duration_days }} days per person</span>
+        </div>
+        <div class="booking-stats">
+          <div><i class="fa-solid fa-star" style="color:#f59e0b"></i> <strong>{{ dest.rating }}</strong>/5 — {{ reviews|length }} review{{ 's' if reviews|length != 1 }}</div>
+          <div><i class="fa-regular fa-clock"></i> {{ dest.duration_days }} days recommended stay</div>
+          {% if dest.best_time %}<div><i class="fa-regular fa-calendar"></i> Best time: <strong>{{ dest.best_time }}</strong></div>{% endif %}
+          {% if dest.difficulty %}
+          <div>
+            <i class="fa-solid fa-gauge-simple"></i>
+            Difficulty: <strong class="diff-text-{{ dest.difficulty.lower() }}">{{ dest.difficulty }}</strong>
+          </div>
+          {% endif %}
+        </div>
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('add_to_itinerary', dest_id=dest.id) }}" method="POST">
+          <button type="submit" class="btn-primary btn-full"><i class="fa-solid fa-map-pin"></i> Add to Itinerary</button>
+        </form>
+        <button class="btn-wishlist-big {% if is_wishlisted %}wishlisted{% endif %}" data-id="{{ dest.id }}" id="wishlistBtn">
+          <i class="fa-{% if is_wishlisted %}solid{% else %}regular{% endif %} fa-heart"></i>
+          <span>{% if is_wishlisted %}Saved to Wishlist{% else %}Save to Wishlist{% endif %}</span>
+        </button>
+        {% else %}
+        <a href="{{ url_for('login') }}" class="btn-primary btn-full"><i class="fa-solid fa-map-pin"></i> Add to Itinerary</a>
+        <a href="{{ url_for('login') }}" class="btn-outline btn-full" style="margin-top:8px"><i class="fa-regular fa-heart"></i> Save to Wishlist</a>
+        {% endif %}
+      </div>
+
+      <!-- BUDGET ESTIMATOR -->
+      <div class="budget-card">
+        <h3><i class="fa-solid fa-calculator"></i> Budget Estimator</h3>
+        <div class="budget-row"><label>Days</label><input type="number" id="budgetDays" value="{{ dest.duration_days }}" min="1" max="30"></div>
+        <div class="budget-row"><label>Travellers</label><input type="number" id="budgetPeople" value="1" min="1" max="20"></div>
+        <div class="budget-result">
+          <span>Estimated Total</span>
+          <span id="budgetTotal">₹{{ "{:,.0f}".format(dest.estimated_cost) }}</span>
+        </div>
+        <p style="font-size:.75rem;color:var(--text-3);margin-top:8px">* Estimate includes accommodation, food & local transport. Flights extra.</p>
+      </div>
+
+      <!-- QUICK INFO BOX -->
+      <div class="detail-card" style="padding:20px">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:14px"><i class="fa-solid fa-circle-info"></i> Quick Info</h3>
+        <div class="quick-info-list">
+          {% if dest.location %}<div class="qi-row"><i class="fa-solid fa-location-dot"></i><span>{{ dest.location }}</span></div>{% endif %}
+          {% if dest.best_time %}<div class="qi-row"><i class="fa-regular fa-calendar"></i><span>Best: {{ dest.best_time }}</span></div>{% endif %}
+          {% if dest.language %}<div class="qi-row"><i class="fa-solid fa-language"></i><span>{{ dest.language }}</span></div>{% endif %}
+          {% if dest.currency %}<div class="qi-row"><i class="fa-solid fa-indian-rupee-sign"></i><span>{{ dest.currency }}</span></div>{% endif %}
+          <div class="qi-row"><i class="fa-regular fa-clock"></i><span>{{ dest.duration_days }} days stay</span></div>
+          {% if dest.difficulty %}<div class="qi-row"><i class="fa-solid fa-gauge-simple"></i><span>{{ dest.difficulty }} trip</span></div>{% endif %}
+          {% if dest.category %}<div class="qi-row"><i class="fa-solid fa-tag"></i><span>{{ dest.category }}</span></div>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMILAR DESTINATIONS -->
+  {% if similar %}
+  <div class="detail-card similar-section">
+    <h2>Similar Destinations You Might Love</h2>
+    <div class="similar-grid">
+      {% for s in similar %}
+      <a href="{{ url_for('destination_detail', dest_id=s.id) }}" class="similar-card">
+        <img src="{{ s.image_url }}" alt="{{ s.name }}">
+        <div class="similar-overlay">
+          <h4>{{ s.name }}</h4>
+          <p>₹{{ "{:,.0f}".format(s.estimated_cost) }} &nbsp;·&nbsp; ⭐ {{ s.rating }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Map
+{% if dest.latitude and dest.longitude %}
+const dMap = L.map('detailMap').setView([{{ dest.latitude }}, {{ dest.longitude }}], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap'}).addTo(dMap);
+const icon = L.divIcon({className:'', html:`<div style="background:#2563eb;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 10px rgba(37,99,235,.5)"></div>`, iconSize:[16,16], iconAnchor:[8,8]});
+L.marker([{{ dest.latitude }}, {{ dest.longitude }}], {icon}).addTo(dMap).bindPopup("<b>{{ dest.name }}</b><br>{{ dest.location }}").openPopup();
+{% endif %}
+
+// Budget estimator
+const baseCost = {{ dest.estimated_cost }};
+const baseDays = {{ dest.duration_days }};
+function updateBudget(){
+  const days   = parseInt(document.getElementById('budgetDays').value)   || 1;
+  const people = parseInt(document.getElementById('budgetPeople').value) || 1;
+  const total  = (baseCost / baseDays) * days * people;
+  document.getElementById('budgetTotal').textContent = '₹' + total.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+document.getElementById('budgetDays')?.addEventListener('input', updateBudget);
+document.getElementById('budgetPeople')?.addEventListener('input', updateBudget);
+
+// Wishlist toggle
+document.getElementById('wishlistBtn')?.addEventListener('click', function(){
+  fetch(`/wishlist/toggle/{{ dest.id }}`, {method:'POST'}).then(r=>r.json()).then(data=>{
+    const icon = this.querySelector('i');
+    const text = this.querySelector('span');
+    if(data.status === 'added'){
+      this.classList.add('wishlisted');
+      icon.className = 'fa-solid fa-heart';
+      text.textContent = 'Saved to Wishlist';
+    } else {
+      this.classList.remove('wishlisted');
+      icon.className = 'fa-regular fa-heart';
+      text.textContent = 'Save to Wishlist';
+    }
+  });
+});
+</script>
+{% endblock %}

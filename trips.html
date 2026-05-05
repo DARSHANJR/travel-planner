@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% block title %}My Trips — Wanderlust{% endblock %}
+{% block content %}
+<div class="page-header-simple">
+  <div class="container">
+    <h1><i class="fa-solid fa-suitcase"></i> My Trips</h1>
+    <p>Track and manage all your travel plans</p>
+  </div>
+</div>
+<div class="container trips-page">
+  {% if trips %}
+  <div class="trips-grid">
+    {% for trip in trips %}
+    <div class="trip-card status-{{ trip.status.lower() }}">
+      <div class="trip-card-header">
+        <div class="trip-status-badge status-{{ trip.status.lower() }}">
+          <i class="fa-solid {% if trip.status=='Planned' %}fa-clock{% elif trip.status=='Ongoing' %}fa-plane{% else %}fa-circle-check{% endif %}"></i>
+          {{ trip.status }}
+        </div>
+        <span class="trip-date">{{ trip.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+      <h2 class="trip-title">{{ trip.title }}</h2>
+      <div class="trip-meta">
+        {% if trip.start_date %}<span><i class="fa-regular fa-calendar"></i> {{ trip.start_date.strftime('%d %b') }} {% if trip.end_date %}→ {{ trip.end_date.strftime('%d %b %Y') }}{% endif %}</span>{% endif %}
+        <span><i class="fa-solid fa-map-pin"></i> {{ trip.items|length }} destination{{ 's' if trip.items|length != 1 }}</span>
+        <span><i class="fa-regular fa-clock"></i> {{ trip.items|sum(attribute='duration_days') }} days</span>
+      </div>
+      <div class="trip-destinations-preview">
+        {% for item in trip.items[:3] %}
+        <img src="{{ item.destination.image_url }}" alt="{{ item.destination.name }}" title="{{ item.destination.name }}">
+        {% endfor %}
+        {% if trip.items|length > 3 %}<div class="more-count">+{{ trip.items|length - 3 }}</div>{% endif %}
+      </div>
+      <div class="trip-card-footer">
+        <div class="trip-total"><span>Total Cost</span><strong>₹{{ "{:,.0f}".format(trip.total_cost) }}</strong></div>
+        <div class="trip-actions">
+          <a href="{{ url_for('trip_detail', trip_id=trip.id) }}" class="btn-outline-sm">View Details</a>
+          <form action="{{ url_for('delete_trip', trip_id=trip.id) }}" method="POST" onsubmit="return confirm('Delete this trip?')">
+            <button type="submit" class="btn-danger-sm"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state large">
+    <i class="fa-solid fa-suitcase"></i>
+    <h2>No trips yet</h2>
+    <p>Start adding destinations to your itinerary and plan your first trip!</p>
+    <a href="{{ url_for('destinations') }}" class="btn-primary">Explore Destinations</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
