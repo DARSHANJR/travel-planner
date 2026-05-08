@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block title %}Explore Destinations — Wanderlust{% endblock %}
+{% block content %}
+
+<div class="page-header-simple">
+  <div class="container">
+    <h1><i class="fa-solid fa-compass"></i> Explore Destinations</h1>
+    <p>Discover {{ destinations|length }} incredible places waiting for you</p>
+  </div>
+</div>
+
+<div class="container destinations-page">
+  <!-- SEARCH & FILTER BAR -->
+  <form class="filter-bar" action="{{ url_for('destinations') }}" method="GET">
+    <div class="filter-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search destinations, cities...">
+    </div>
+    <div class="filter-group">
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort">
+        <option value="">Sort By</option>
+        <option value="rating" {% if sort=='rating' %}selected{% endif %}>Top Rated</option>
+        <option value="cost_asc" {% if sort=='cost_asc' %}selected{% endif %}>Price: Low to High</option>
+        <option value="cost_desc" {% if sort=='cost_desc' %}selected{% endif %}>Price: High to Low</option>
+      </select>
+      <button type="submit" class="btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+      <a href="{{ url_for('destinations') }}" class="btn-outline">Clear</a>
+    </div>
+  </form>
+
+  <!-- CATEGORY CHIPS -->
+  <div class="category-chips">
+    <a href="{{ url_for('destinations') }}" class="chip {% if not selected_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('destinations', category=cat) }}" class="chip {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+
+  {% if q or selected_category %}
+  <div class="search-results-info">
+    <p>Showing <strong>{{ destinations|length }}</strong> result{% if destinations|length != 1 %}s{% endif %}
+    {% if q %} for "<em>{{ q }}</em>"{% endif %}
+    {% if selected_category %} in <em>{{ selected_category }}</em>{% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+  {% if destinations %}
+  <div class="destinations-grid large">
+    {% for dest in destinations %}
+    <div class="dest-card">
+      <div class="dest-card-img-wrap">
+        <img src="{{ dest.image_url }}" alt="{{ dest.name }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';">
+        <div class="dest-card-badge">{{ dest.category }}</div>
+        {% if dest.is_trending %}<div class="trending-tag"><i class="fa-solid fa-fire"></i> Trending</div>{% endif %}
+        {% if current_user.is_authenticated %}
+        <button class="wishlist-btn {% if dest.id in current_user.wishlist|map(attribute='destination_id')|list %}wishlisted{% endif %}" data-id="{{ dest.id }}">
+          <i class="fa-{% if dest.id in current_user.wishlist|map(attribute='destination_id')|list %}solid{% else %}regular{% endif %} fa-heart"></i>
+        </button>
+        {% endif %}
+      </div>
+      <div class="dest-card-body">
+        <div class="dest-card-meta">
+          <span class="dest-rating"><i class="fa-solid fa-star"></i> {{ dest.rating }}</span>
+          <span class="dest-location"><i class="fa-solid fa-location-dot"></i> {{ dest.location.split(',')[0] }}</span>
+          <span class="dest-duration"><i class="fa-regular fa-clock"></i> {{ dest.duration_days }} days</span>
+        </div>
+        <h3 class="dest-card-title">{{ dest.name }}</h3>
+        <p class="dest-card-desc">{{ dest.description[:110] }}...</p>
+        {% if dest.best_time %}
+        <div class="dest-best-time"><i class="fa-regular fa-calendar"></i> Best: {{ dest.best_time }}</div>
+        {% endif %}
+        <div class="dest-card-footer">
+          <div class="dest-price">
+            <span class="price-label">Est. Cost</span>
+            <span class="price-amount">₹{{ "{:,.0f}".format(dest.estimated_cost) }}</span>
+          </div>
+          <div class="dest-actions">
+            <a href="{{ url_for('destination_detail', dest_id=dest.id) }}" class="btn-outline-sm">Details</a>
+            {% if current_user.is_authenticated %}
+            <form action="{{ url_for('add_to_itinerary', dest_id=dest.id) }}" method="POST" style="display:inline">
+              <button type="submit" class="btn-primary-sm"><i class="fa-solid fa-plus"></i> Add</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn-primary-sm"><i class="fa-solid fa-plus"></i> Add</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <h3>No destinations found</h3>
+    <p>Try a different search term or category.</p>
+    <a href="{{ url_for('destinations') }}" class="btn-primary">View All</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
