@@ -1,0 +1,210 @@
+{% extends "layout.html" %}
+{% block title %}Wanderlust — Discover India's Most Beautiful Destinations{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-overlay"></div>
+    <img src="https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1600&q=80" alt="Hero" class="hero-img" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';">
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge"><i class="fa-solid fa-star"></i> #1 Travel Planner for India</div>
+    <h1 class="hero-title">Discover Your <span class="hero-highlight">Perfect Journey</span></h1>
+    <p class="hero-subtitle">Plan unforgettable trips across incredible destinations. Build your itinerary, track your adventures, and make memories that last forever.</p>
+    <form class="hero-search" action="{{ url_for('destinations') }}" method="GET">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" placeholder="Where do you want to go? Try 'Goa' or 'mountains'...">
+      </div>
+      <button type="submit" class="btn-primary">Search</button>
+    </form>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">{{ featured|length + 6 }}+</span><span>Destinations</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">4</span><span>Categories</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">₹7K+</span><span>Starting From</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll"><i class="fa-solid fa-chevron-down"></i></div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="section categories-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Explore By Type</span>
+      <h2 class="section-title">What Kind of Traveler Are You?</h2>
+    </div>
+    <div class="categories-grid">
+      {% for cat, icon, color, img in [
+        ('Beach','fa-umbrella-beach','#0ea5e9','https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80'),
+        ('Mountain','fa-mountain','#22c55e','https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80'),
+        ('Historical','fa-landmark','#f59e0b','https://images.unsplash.com/photo-1548013146-72479768bada?w=400&q=80'),
+        ('City','fa-city','#8b5cf6','https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80')
+      ] %}
+      <a href="{{ url_for('destinations', category=cat) }}" class="category-card">
+        <img src="{{ img }}" alt="{{ cat }}">
+        <div class="category-overlay"></div>
+        <div class="category-content">
+          <i class="fa-solid {{ icon }}"></i>
+          <h3>{{ cat }}</h3>
+          <span>Explore →</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED DESTINATIONS -->
+<section class="section featured-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Handpicked for You</span>
+      <h2 class="section-title">Featured Destinations</h2>
+      <a href="{{ url_for('destinations') }}" class="section-link">View All <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="destinations-grid">
+      {% for dest in featured %}
+      <div class="dest-card" data-aos="fade-up">
+        <div class="dest-card-img-wrap">
+          <img src="{{ dest.image_url }}" alt="{{ dest.name }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';">
+          <div class="dest-card-badge">{{ dest.category }}</div>
+          {% if current_user.is_authenticated %}
+          <button class="wishlist-btn {% if current_user.is_authenticated and dest.id in current_user.wishlist|map(attribute='destination_id')|list %}wishlisted{% endif %}" data-id="{{ dest.id }}" title="Add to Wishlist">
+            <i class="fa-{% if current_user.is_authenticated and dest.id in current_user.wishlist|map(attribute='destination_id')|list %}solid{% else %}regular{% endif %} fa-heart"></i>
+          </button>
+          {% endif %}
+        </div>
+        <div class="dest-card-body">
+          <div class="dest-card-meta">
+            <span class="dest-rating"><i class="fa-solid fa-star"></i> {{ dest.rating }}</span>
+            <span class="dest-location"><i class="fa-solid fa-location-dot"></i> {{ dest.location.split(',')[0] }}</span>
+          </div>
+          <h3 class="dest-card-title">{{ dest.name }}</h3>
+          <p class="dest-card-desc">{{ dest.description[:100] }}...</p>
+          <div class="dest-card-footer">
+            <div class="dest-price">
+              <span class="price-label">Est. Cost</span>
+              <span class="price-amount">₹{{ "{:,.0f}".format(dest.estimated_cost) }}</span>
+            </div>
+            <div class="dest-actions">
+              <a href="{{ url_for('destination_detail', dest_id=dest.id) }}" class="btn-outline-sm">Details</a>
+              {% if current_user.is_authenticated %}
+              <form action="{{ url_for('add_to_itinerary', dest_id=dest.id) }}" method="POST" style="display:inline">
+                <button type="submit" class="btn-primary-sm"><i class="fa-solid fa-plus"></i> Add</button>
+              </form>
+              {% else %}
+              <a href="{{ url_for('login') }}" class="btn-primary-sm"><i class="fa-solid fa-plus"></i> Add</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- TRENDING -->
+<section class="section trending-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag"><i class="fa-solid fa-fire"></i> Hot Right Now</span>
+      <h2 class="section-title">Trending Destinations</h2>
+    </div>
+    <div class="trending-grid">
+      {% for dest in trending %}
+      <a href="{{ url_for('destination_detail', dest_id=dest.id) }}" class="trending-card">
+        <img src="{{ dest.image_url }}" alt="{{ dest.name }}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';">
+        <div class="trending-overlay">
+          <div class="trending-info">
+            <span class="trending-badge"><i class="fa-solid fa-fire"></i> Trending</span>
+            <h3>{{ dest.name }}</h3>
+            <p>₹{{ "{:,.0f}".format(dest.estimated_cost) }} • {{ dest.duration_days }} days</p>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- MAP PREVIEW -->
+<section class="section map-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Interactive Map</span>
+      <h2 class="section-title">Explore Destinations on the Map</h2>
+    </div>
+    <div class="map-container">
+      <div id="homeMap" style="height:450px;border-radius:16px;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RECOMMENDED -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Picks</span>
+      <h2 class="section-title">Recommended for You</h2>
+    </div>
+    <div class="destinations-grid">
+      {% for dest in recommended %}
+      <div class="dest-card">
+        <div class="dest-card-img-wrap">
+          <img src="{{ dest.image_url }}" alt="{{ dest.name }}" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';">
+          <div class="dest-card-badge">{{ dest.category }}</div>
+        </div>
+        <div class="dest-card-body">
+          <div class="dest-card-meta">
+            <span class="dest-rating"><i class="fa-solid fa-star"></i> {{ dest.rating }}</span>
+            <span class="dest-location"><i class="fa-solid fa-location-dot"></i> {{ dest.location.split(',')[0] }}</span>
+          </div>
+          <h3 class="dest-card-title">{{ dest.name }}</h3>
+          <div class="dest-card-footer">
+            <span class="price-amount">₹{{ "{:,.0f}".format(dest.estimated_cost) }}</span>
+            <a href="{{ url_for('destination_detail', dest_id=dest.id) }}" class="btn-primary-sm">Explore</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+{% if not current_user.is_authenticated %}
+<section class="cta-section">
+  <div class="cta-content">
+    <h2>Ready to Start Your Journey?</h2>
+    <p>Join thousands of travelers who plan their perfect trips with Wanderlust.</p>
+    <div class="cta-btns">
+      <a href="{{ url_for('register') }}" class="btn-cta-primary">Create Free Account</a>
+      <a href="{{ url_for('destinations') }}" class="btn-cta-outline">Browse Destinations</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+const map = L.map('homeMap').setView([22.5, 82.0], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap'}).addTo(map);
+fetch('/api/destinations').then(r=>r.json()).then(data=>{
+  data.forEach(d=>{
+    if(d.lat && d.lng){
+      const colors = {'Beach':'#0ea5e9','Mountain':'#22c55e','Historical':'#f59e0b','City':'#8b5cf6'};
+      const color = colors[d.category] || '#2563eb';
+      const icon = L.divIcon({className:'',html:`<div style="background:${color};width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,iconSize:[14,14],iconAnchor:[7,7]});
+      L.marker([d.lat,d.lng],{icon}).addTo(map)
+       .bindPopup(`<b>${d.name}</b><br>₹${d.cost.toLocaleString('en-IN')}<br>⭐ ${d.rating}`);
+    }
+  });
+});
+</script>
+{% endblock %}

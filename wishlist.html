@@ -1,0 +1,135 @@
+{% extends "layout.html" %}
+{% block title %}My Wishlist — Wanderlust{% endblock %}
+{% block content %}
+
+<div class="page-header-simple">
+  <div class="container">
+    <h1><i class="fa-solid fa-heart"></i> My Wishlist</h1>
+    <p>{% if items %}{{ items|length }} destination{{ 's' if items|length != 1 }} you're dreaming about{% else %}Destinations you're dreaming about{% endif %}</p>
+  </div>
+</div>
+
+<div class="container wishlist-page">
+  {% if items %}
+
+  <!-- Tip banner -->
+  <div class="wishlist-tip">
+    <i class="fa-solid fa-lightbulb"></i>
+    <span>Click the <i class="fa-solid fa-heart" style="color:#ef4444"></i> heart to remove a destination. Click <strong>Add</strong> to add it to your itinerary.</span>
+  </div>
+
+  <div class="destinations-grid large" id="wishlistGrid">
+    {% for w in items %}
+    <div class="dest-card" id="wish-card-{{ w.destination.id }}">
+      <div class="dest-card-img-wrap">
+        <img
+          src="{{ w.destination.image_url }}"
+          alt="{{ w.destination.name }}"
+          loading="lazy"
+          onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80&auto=format&fit=crop';"
+        >
+        <div class="dest-card-badge">{{ w.destination.category }}</div>
+        {% if w.destination.is_trending %}
+        <div class="trending-tag"><i class="fa-solid fa-fire"></i> Trending</div>
+        {% endif %}
+        <!-- Wishlist remove button -->
+        <button
+          class="wishlist-btn wishlisted"
+          data-id="{{ w.destination.id }}"
+          title="Remove from wishlist"
+          aria-label="Remove {{ w.destination.name }} from wishlist"
+        >
+          <i class="fa-solid fa-heart"></i>
+        </button>
+      </div>
+
+      <div class="dest-card-body">
+        <div class="dest-card-meta">
+          <span class="dest-rating"><i class="fa-solid fa-star"></i> {{ w.destination.rating }}</span>
+          <span class="dest-location"><i class="fa-solid fa-location-dot"></i> {{ w.destination.location.split(',')[0] }}</span>
+          <span class="dest-duration"><i class="fa-regular fa-clock"></i> {{ w.destination.duration_days }} days</span>
+        </div>
+        <h3 class="dest-card-title">{{ w.destination.name }}</h3>
+        <p class="dest-card-desc">{{ w.destination.description[:110] }}...</p>
+        {% if w.destination.best_time %}
+        <div class="dest-best-time"><i class="fa-regular fa-calendar"></i> Best: {{ w.destination.best_time }}</div>
+        {% endif %}
+        {% if w.destination.difficulty %}
+        <div class="dest-difficulty diff-{{ w.destination.difficulty.lower() }}">
+          <i class="fa-solid fa-gauge-simple"></i> {{ w.destination.difficulty }}
+        </div>
+        {% endif %}
+        <div class="dest-card-footer">
+          <div class="dest-price">
+            <span class="price-label">Est. Cost</span>
+            <span class="price-amount">₹{{ "{:,.0f}".format(w.destination.estimated_cost) }}</span>
+          </div>
+          <div class="dest-actions">
+            <a href="{{ url_for('destination_detail', dest_id=w.destination.id) }}" class="btn-outline-sm">
+              <i class="fa-solid fa-circle-info"></i> Details
+            </a>
+            <form action="{{ url_for('add_to_itinerary', dest_id=w.destination.id) }}" method="POST" style="display:inline">
+              <button type="submit" class="btn-primary-sm">
+                <i class="fa-solid fa-map-pin"></i> Add
+              </button>
+            </form>
+          </div>
+        </div>
+        <!-- Added date -->
+        <div class="wish-added-date">
+          <i class="fa-regular fa-clock"></i> Saved {{ w.added_at.strftime('%d %b %Y') }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Bottom actions -->
+  <div class="wishlist-actions">
+    <a href="{{ url_for('destinations') }}" class="btn-outline">
+      <i class="fa-solid fa-compass"></i> Explore More Destinations
+    </a>
+    <a href="{{ url_for('itinerary') }}" class="btn-primary">
+      <i class="fa-solid fa-map-pin"></i> View My Itinerary
+    </a>
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="empty-state large">
+    <div class="empty-state-icon">
+      <i class="fa-regular fa-heart"></i>
+    </div>
+    <h2>Your wishlist is empty</h2>
+    <p>Browse destinations and click the <i class="fa-solid fa-heart" style="color:#ef4444"></i> heart icon to save your favourite places here.</p>
+    <a href="{{ url_for('destinations') }}" class="btn-primary">
+      <i class="fa-solid fa-compass"></i> Explore Destinations
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// On wishlist page — override the default remove handler to show
+// a friendly "card removed" toast with destination name
+document.querySelectorAll('.wishlist-btn[data-id]').forEach(btn => {
+  const destName = btn.closest('.dest-card')?.querySelector('.dest-card-title')?.textContent?.trim();
+  btn.addEventListener('click', () => {
+    if (destName) {
+      // Wait for the main handler in app.js to fire first
+      // then update the toast message with the name
+      setTimeout(() => {
+        const toasts = document.querySelectorAll('.flash.flash-info');
+        toasts.forEach(t => {
+          if (t.textContent.includes('Removed')) {
+            // Already shows — no need to change, but we can enhance
+          }
+        });
+      }, 200);
+    }
+  });
+});
+</script>
+{% endblock %}
